@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+
+  "name": "SV",
+  "description": "SV rippomatic",
+    "version": "1.0",
+    
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_title": "ripomatic"
+  },
+    
+  "permissions": [
+      "storage",
+      "activeTab",
+      "downloads",
+      "https://ajax.googleapis.com/",
+      "https://maps.googleapis.com/",
+      "http://cbk0.google.com/",
+      "http://localhost:8080/",
+      "https://maps.google.com/"
+
+  ],
+
+  "content_security_policy":"script-src 'self' https://maps.google.com https://ajax.googleapis.com https://maps.googleapis.com; object-src 'self'"
+}
