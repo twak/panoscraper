@@ -2,6 +2,6 @@ chrome extension to list all (current and past) panorama ids in an area drawn on
 
 ![docs](https://github.com/twak/panoscraper/blob/master/doc.png?raw=true)
 
-you can download current or historical panoramas. At the bottom of the page is a utility to download the whole panorama. 
+you can download current or historical (usually more datapoints) panorama metadata. at the bottom of the page is a utility to download a single panorama in a variety of qualities. 
 
-also a utility to download a list of panoramas ids ([mosaic](https://github.com/twak/panoscraper/tree/master/src/org/twak/mosaic))
+this project has a utility to download images from a list of panoramas ids ([mosaic](https://github.com/twak/panoscraper/tree/master/src/org/twak/mosaic))
