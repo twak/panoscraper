@@ -7,7 +7,7 @@ var panorama;
 
 function initialize() {
     var sv = new google.maps.StreetViewService();
-    var start = {lat: 33.37399724981307, lng: -111.9104243473818 };
+    var start = {lat: 33.5190755, lng:-111.9253654};
         //lat: 43.36730798597097, 
         //lng: -5.834250420142922
     
@@ -42,7 +42,12 @@ function initialize() {
             return;
         suppressUpdate = true;
         panoid = panorama.getPano();
-
+        if (seen[panoid]) {
+            console.log("seen " + panoid);
+            nextTodo(false);
+            return;
+        }
+        seen[panoid] = 1;
         console.log("update on " + panoid);
         document.getElementById('panoid').innerHTML = "id: " + (panoid ? panoid : "move pegman first");
         if (panorama.location) {
@@ -51,25 +56,26 @@ function initialize() {
             $("#panlat").empty();
             $("#heading").empty();
         }
-
         parameters = null ;
         getExact(panoid, function(v) {
 
             parameters = v;
             if (v) {
 
-                document.getElementById('full').innerHTML = v.lat +", " + v.lng + ", " +v.height+", "+ v.a +", " + v.b +"," + v.c;
+                document.getElementById('full').innerHTML = "lat_long_height?_roty_rotx?_rotz?: " + v.join("_");
+                // listLocal(v);
 
                 if (runAutomatic) {
-                    if (!processed.hasOwnProperty(v.id) && !outside.hasOwnProperty[v.id] ) {
-                        
-                            if ( drawnContains(v) ) {
-                                processed[v.id] = v;
+                    var latLongKey = toLatLongKey(parameters);
+                    if (!seen[latLongKey] && parameters[0] >= minLat && parameters[0] <= maxLat && parameters[1] >= minLong && parameters[1] <= maxLong) {
+                        fileSystemHas(v.join("_"), function(has) {
+                            seen[latLongKey] = 1;
+                            if (!has ) {
                                 addTodo(panorama.getLinks());
-                            }
-                            else
-                                outside[v.id] = v;
-                            nextTodo(true);
+                                process();
+                            } else
+                                nextTodo(false);
+                        });
                     } else
                         nextTodo(false);
                 } else
@@ -136,21 +142,17 @@ function initialize() {
     });
 }
 
-var outside = {}, toProcess = {}, processed = {};
+var outside, toProcess, processed;
 
 function next2() {
 
     console.log("toProcess " + Object.keys(toProcess).length +" processed " +Object.keys(processed).length + " outside " + Object.keys(outside).length);
 
-    remaining =  Object.keys(toProcess).length;
-
-    if ( remaining == 0) {
+    if ( Object.keys(toProcess).length == 0) {
         console.log("all done");
         done2(processed);
         return;
     }
-    
-    $("#togo").html("togo: " + remaining +" found " + Object.keys(processed).length);
 
     var k = Object.keys(toProcess)[0];
     var next = toProcess[k];
@@ -199,7 +201,7 @@ function listLocal(origin, found) {
                 
                 //[[2,"wKYVjI6DN7DjFqXYgo-zOw"],null,[[null,null,43.36667006893445,-5.832748233898315],
                 // [183.7556304931641],[206.2729644775391,90.45455169677734,2.180722951889038]]]
-                var myRegexp = /.*?(\[\[2,\".*?\]\])/gy;
+                var myRegexp = /.*?(\[\[2,\"(?:(?!\[\[2).)+?en\"\]\]\]\])/gy;
                  // /.*\[\[2,\"([^\"]+)\"\],null,\[\[null,null,([^,]+),([^,]+)\],\[([^,]+)\],.*/;
                  var match;
                  
@@ -207,12 +209,12 @@ function listLocal(origin, found) {
                      match = myRegexp.exec(this.responseText);
                      if (match)  {
 
-                        if (match[1].includes(",90,"))
-                            continue;
+                        if (match[1].includes(",90,") || match[0].length > 6000)
+                            break;
 
                          //console.log( match[1] +"]");
                          try {
-                         var loc = JSON.parse ( match[1] +"]" );
+                         var loc = JSON.parse ( "["+match[1] +"]" )[0]
                          
                          
                             var parsed = {
@@ -246,10 +248,7 @@ function listLocal(origin, found) {
 	         } 
         }
     }
-
     xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.SingleImageSearch?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m4!1m2!3d"+origin.lat+"!4d"+origin.lng+"!2d50!3m10!2m2!1sen!2sGB!9m1!1e2!11m4!1m3!1e2!2b1!3e2!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._v2mub5", true);
-//    xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.GetMetadata?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m1!1sen!3m3!1m2!1e2!2s" + origin.id + "!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._misdlu", true);
-
     xhttp.send();
 }
 
@@ -270,41 +269,67 @@ function drawnContains (loc ) {
 function toLatLongKey(parameters) {
     return parameters[0] + "_" + parameters[1]
 }
-
+var seen = {}
+  , todo = {}
 function addTodo(links) {
-
     var c = 0;
     for (var i in links) {
+        // stash links for future processing
         var p = links[i].pano;
-        if (!processed.hasOwnProperty(p) && !outside.hasOwnProperty[p] ) {
-            toProcess[p] = 1;
+        if (!seen[p]) {
+            todo[p] = 1;
             c = c + 1;
         }
     }
     console.log("added " + c + " from " + links.length);
 }
-
 function nextTodo(delay) {
-    var remaining = Object.keys(toProcess).length;
+    var remaining = Object.keys(todo).length;
     console.log("remaining size " + remaining);
-    $("#togo").html("togo: " + remaining+" found " + Object.keys(processed).length );
+    $("#togo").html("togo: " + remaining);
     if (remaining == 0) {
-        if (!runAutomatic) 
-            reset(false)
-        else
-            done2(processed);
+        //         alert("all done");
+
+        if (!runAutomatic) {
+            seen = {};
+            todo = {};
+        }
 
         return;
     }
+    do {
+        var key = Object.keys(todo)[0];
+        var value = todo[key];
+        delete (todo[key]);
+        if (!seen[key]) {
+            fileSystemHas(key, function(has) {
+                if (has) {
+                    seen[key] = 1;
+                    console.log("seen " + key);
+                    nextTodo(false);
+                    return;
+                }
+                repeat = false;
+                setTimeout(function() {
+                    if (Array.isArray(value)) {
+                        // lat/long
+                        console.log("saving empty " + key);
+                        saveEmptyFile(key);
+                        panorama.setPosition({
+                            lat: value[0],
+                            lng: value[1]
+                        });
+                    } else
+                        // is a panorama id: sometimes fires update twice, sometimes once
+                        
+                        panorama.setPano(key);
+                    suppressUpdate = false;
 
-    var key = Object.keys(toProcess)[0];
-    var value = toProcess[key];
-    delete (toProcess[key]);
-
-    setTimeout(function() {
-                panorama.setPano(key); // sometimes fires twice...
-                suppressUpdate = false;
-         }, delay ? 2000 : 0);
+                }, delay ? 2000 : 0);
+            });
+            return;
+        }
+    } while (true);
 }
 
 var watchDogRunning = false;
@@ -322,8 +347,38 @@ function watchdog() {
     }, 5000 );
 }
 
+function fileSystemHas(key, after) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            after.call(this, xhttp.responseText == "True");
+        }
+    }
+    xhttp.open("POST", "http://localhost:8080/query");
+    xhttp.send(key);
+}
+var minLat, maxLat, minLong, maxLong;
+function bulk() {
+    var lat1 = parseFloat($("#lat1").val())
+      , long1 = parseFloat($("#long1").val())
+      , lat2 = parseFloat($("#lat2").val())
+      , long2 = parseFloat($("#long2").val());
+    // beware the meridian
+    minLong = Math.min(long1, long2);
+    maxLong = Math.max(long1, long2);
+    minLat = Math.min(lat1, lat2);
+    maxLat = Math.max(lat1, lat2);
+    var step = 0.0001;
+    for (var x = minLong; x <= maxLong; x += step)
+        for (var y = minLat; y <= maxLat; y += step)
+            todo[toLatLongKey([y, x])] = [y, x];
+    suppressUpdate = false;
+    panorama.setPosition({
+        lat: lat1,
+        lng: long1
+    });
+}
 var lastExactId, lastExactResult;
-
 function getExact(id, ondone) {
     if (id == lastExactId) {
         ondone(lastExactResult);
@@ -341,22 +396,9 @@ function getExact(id, ondone) {
                 if (match) {
                     //                 console.log("::"+match[1]+"::");
                     var strs = match[1].split(/[,\[\]]+/);
-
-                    lastExactResult = strs.map(parseFloat).filter(function(x) {
+                    ondone(lastExactResult = strs.map(parseFloat).filter(function(x) {
                         return !isNaN(x);
-                    })
-                         
-                    lastExactResult = {
-                             lat:lastExactResult[0], 
-                             lng:lastExactResult[1], 
-                             id:id,
-                             height: lastExactResult[2],
-                             a:lastExactResult[3],
-                             b:lastExactResult[4],
-                             c:lastExactResult[5],
-                             }
-
-                    ondone(lastExactResult);
+                    }));
                 }
             } else
                 ondone.call();
@@ -365,7 +407,6 @@ function getExact(id, ondone) {
     xhttp.open("GET", "https://maps.googleapis.com/maps/api/js/GeoPhotoService.GetMetadata?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m1!1sen!3m3!1m2!1e2!2s" + id + "!4m10!1e1!1e2!1e3!1e4!1e8!1e6!5m1!1e2!6m1!1e2&callback=_xdc_._misdlu", true);
     xhttp.send();
 }
-
 PANO_X = 13312;
 PANO_Y = 6656;
 TILE = 512;
@@ -417,6 +458,10 @@ function create(panoid, x, y, resolution) {
         }
     }
     img.src = "http://cbk0.google.com/cbk?output=tile&panoid=" + panoid + "&zoom=5&x=" + x + "&y=" + y;
+}
+
+function buildFilename() {
+    return  parameters ? parameters.join("_") + "_" + panoid : "unknown" 
 }
 
 function grabDepth(count) {
@@ -481,15 +526,107 @@ function setCoords(a, b) {
     $("#" + a).val(parameters[0]);
     $("#" + b).val(parameters[1]);
 }
-
 function reset(bulk) {
     runAutomatic = bulk;
-    toProcess = {};
-    outside = {};
-    processed = {};
+    todo = {};
+    seen = {};
 }
 
+function savePlanes (array, filename) {
+    if ($('#saveByDownload').get()[0].checked) {
+        // nada
+    } else {
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("done");
+            }
+        }
+
+        var s = "";
+
+        for (var i = 0; i < array.length; i++) {
+            s += array[i].join(",")+"\n";
+        }
+
+        var data = "data:image/jpeg;base64,"+window.btoa(s);
+        var missing_padding = data.length % 4
+
+        while (missing_padding != 0) {
+            data += '=';
+            missing_padding--;
+        }
+
+        xhttp.open("POST", "http://localhost:8080/save");
+        
+        xhttp.send(JSON.stringify({
+            filename: filename,
+            data: data
+        }));
+
+    }
+}
+
+function saveCanvas(id, type, filename) {
+
+    if ($('#saveByDownload').get()[0].checked) {
+
+        console.log("download canvas");
+        if (chrome.downloads)
+            chrome.downloads.download({
+                url: $("#"+id).get()[0].toDataURL(type, 1.0),
+                filename: filename
+            });
+
+    } else {
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("done");
+            }
+        }
+
+        var data =  $("#"+id).get()[0].toDataURL(type);
+        var missing_padding = data.length % 4
+
+        while (missing_padding != 0) {
+            data += '=';
+            missing_padding--;
+        }
+
+        xhttp.open("POST", "http://localhost:8080/save");
+        xhttp.send(JSON.stringify({
+            filename: filename,
+            data: data
+        }));
+
+    }
+}
+
+function saveEmptyFile(name) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.open("POST", "http://localhost:8080/save");
+    xhttp.send(JSON.stringify({
+        filename: name,
+        data: ""
+    }));
+}
 $(function() {
+    //     $("#write").click(function() {
+    //         var xhttp = new XMLHttpRequest();
+    //         xhttp.onreadystatechange = function() {
+    //             if (this.readyState == 4 && this.status == 200) {
+    //                 console.log("done");
+    //             }
+    //         }
+    //         xhttp.open("POST", "http://localhost:8080/save", true);
+    //         xhttp.send(JSON.stringify({
+    //             filename: parameters ? parameters.join("_") + ".jpg" : "unknown.jpg",
+    //             data: canvas.toDataURL("image/jpeg")
+    //         }));
+    //     });
     $("#process").click(function() {
         reset(false);
         process();
@@ -502,7 +639,6 @@ $(function() {
     });
     $("#bulk").click(function() {
         reset(true);
-        suppressUpdate = false;
-        update()
+        bulk();
     });
 })

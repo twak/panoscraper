@@ -28,12 +28,25 @@
     <br clear="all">
 
     <div>
+    <hr/>
+    <p>
+    1. use the polygon tool to select the areas you're interested in
+    </p>
+    <p>
+    2. move pegman inside the polygon; click the save button (use load to re-load your polygons later)
+    </p>
+    <p>
+    3. click "current" or "historical" to download an index of panoramas (takes a while)
+    </p>
      <hr/>
-     pano ids in polygon:
+     drawn region:
      <button id="load">load</button>
      <button id="save">save</button> 
-     <button id="go2">go</button> 
-     <button id="clear2">clear</button> 
+     <button id="clear2">clear</button> <br/> <br/>
+     start download:
+     <button id="go2">historical</button> 
+     <button id="bulk">current</button></div>
+     <div id="togo">&nbsp;</div>
     </div>
   <hr/>
     <div>
@@ -49,15 +62,6 @@
 <!--     <button id="write">wreite</button> -->
     <input id="saveByDownload" type="checkbox" value="download">chrome download<br/> 
     </div>
-  <hr/>
-  whole panoramas in lat/long grid:
-    <br/>
-
-    <div><input type="number" id="lat1" value="52.3676663185066"  >
-        <input type="number" id="long1" value="4.89746744873275"><button id="set1">set from pegman</button></div>
-    <div><input type="number" id="lat2" value="52.3682686651542">
-        <input type="number" id="long2" value="4.898819148036551"><button id="set2">set from pegman</button> <button id="bulk">Download many (via server)</button></div>
-    <div id="togo">&nbsp;</div>
     <hr/>
     current pano scraped info:
     
