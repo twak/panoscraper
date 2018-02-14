@@ -4,4 +4,4 @@ chrome extension to list all (current and past) streetview panorama ids in an ar
 
 you can download current or historical (usually more datapoints) panorama metadata. at the bottom of the page is a utility to download a single panorama in a variety of qualities. 
 
-this project has a utility to download images from a list of panoramas ids ([mosaic](https://github.com/twak/panoscraper/tree/master/src/org/twak/mosaic))
+another project has a java utility to download images from a list of panoramas ids ([mosaic](https://github.com/twak/chordatlas/blob/master/src/org/twak/readTrace/Mosaic.java))
