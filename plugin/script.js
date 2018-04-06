@@ -175,7 +175,10 @@ function done2(results) {
 
     for (var j in results) {
         var l = results[j];
-        out.push (l.lat+"_"+l.lng+"_"+l.height+"_"+l.a+"_"+l.b+"_"+l.c+"_"+j );
+
+        desc = l.lat+"_"+l.lng+"_"+l.height+"_"+l.a+"_"+l.b+"_"+l.c+"_"+j 
+        
+        out.push (desc);
 
         var marker = new google.maps.Marker({
                             position: new google.maps.LatLng( l.lat, l.lng ),
@@ -183,10 +186,12 @@ function done2(results) {
                             title:  j
                           });
 
+        console.log(desc);
+
     };
 
     window.open("data:application/octet-stream," + encodeURIComponent(out.join("\n")), 'new');
-
+    console.log(out.join("\n"))
 }
 
 function listLocal(origin, found) {
