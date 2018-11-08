@@ -1,3 +1,5 @@
+edit: the new restrictions on sv usage (and cost) means that this extension no longer really works. Sorry!
+
 chrome extension to list all (current and past) streetview panorama ids in an area drawn on the map, with metadata ([plugin](https://github.com/twak/panoscraper/tree/master/plugin), [instructions for loading plugin via developer mode](https://developer.chrome.com/extensions/getstarted#unpacked)).
 
 ![docs](https://github.com/twak/panoscraper/blob/master/doc.png?raw=true)
